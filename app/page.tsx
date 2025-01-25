@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -15,10 +15,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import "react-phone-number-input/style.css";
-import PhoneInput from "react-phone-number-input";
-import { isValidPhoneNumber } from "libphonenumber-js";
-import { useState } from "react";
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
+import "react-phone-number-input/style.css"; // Include the CSS for phone input styles
 
 // Custom username validation to ensure at least two words
 const formSchema = z.object({
@@ -44,11 +42,9 @@ export function ProfileForm() {
     defaultValues: {
       username: "",
       email: "",
-      phone: "",
+      phone: "", // Default value for phone input
     },
   });
-
-  const [phone, setPhone] = useState(""); // Local state for phone input
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
@@ -74,9 +70,7 @@ export function ProfileForm() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-emerald-300">
-                      Full Name
-                    </FormLabel>
+                    <FormLabel className="text-emerald-300">Full Name</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Enter your full name"
@@ -112,9 +106,7 @@ export function ProfileForm() {
                     <FormDescription className="text-emerald-200">
                       For medical communication and updates
                     </FormDescription>
-                    <FormMessage className="text-red-400">
-                      {form.formState.errors.email?.message || ""}
-                    </FormMessage> {/* Display error message */}
+                    <FormMessage className="text-red-400" />
                   </FormItem>
                 )}
               />
@@ -128,25 +120,15 @@ export function ProfileForm() {
                     <FormLabel className="text-emerald-300">Phone Number</FormLabel>
                     <FormControl>
                       <PhoneInput
+                        {...field}
                         placeholder="Enter phone number"
-                        defaultCountry="KE" // Default to Kenya
-                        value={phone} // Use local state for continuous typing
-                        onChange={(value) => {
-                          setPhone(value || ""); // Update local state
-                          field.onChange(value); // Update form state
-                        }}
+                        defaultCountry="KE" // Set default country to Kenya
+                        value={field.value}
+                        onChange={field.onChange}
                         international
                         withCountryCallingCode
-                        className="w-full"
-                        inputComponent={({ className, ...props }) => (
-                          <input
-                            {...props}
-                            className={`px-3 py-2 rounded-md border border-emerald-700 
-                            bg-gray-900/50 text-white placeholder:text-gray-400 
-                            focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 
-                            hover:bg-emerald-900/30 transition-colors w-full ${className}`}
-                          />
-                        )}
+                        className="w-full border-emerald-700 placeholder:text-gray-400 focus:ring-emerald-500 focus:border-emerald-500 
+                        text-black bg-gray-900/50 hover:bg-emerald-900/30 transition-colors"
                       />
                     </FormControl>
                     <FormDescription className="text-emerald-200">
