@@ -15,14 +15,27 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
+import "react-phone-number-input/style.css";
+import PhoneInput from "react-phone-number-input";
+import { isValidPhoneNumber } from "libphonenumber-js";
+import { useState } from "react";
 
+// Custom username validation to ensure at least two words
 const formSchema = z.object({
-  username: z.string().min(2).max(50),
-  email: z.string().email({ message: "Invalid email address" }),
+  username: z
+    .string()
+    .min(2, "Full name must be at least 2 characters")
+    .max(50, "Name too long")
+    .refine((val) => val.trim().split(" ").length > 1, {
+      message: "Please enter both first and last names",
+    }),
+  email: z.string().email("Invalid email address"),
   phone: z
     .string()
-    .min(10, { message: "Phone number must be at least 10 digits" })
-    .regex(/^\d+$/, { message: "Phone number must contain only numbers" }),
+    .min(10, "Phone number must be at least 10 digits")
+    .refine((val) => isValidPhoneNumber(val), {
+      message: "Invalid phone number",
+    }),
 });
 
 export function ProfileForm() {
@@ -35,22 +48,24 @@ export function ProfileForm() {
     },
   });
 
+  const [phone, setPhone] = useState(""); // Local state for phone input
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-900">
-      <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12">
+      <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
         {/* Form Section */}
-        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 md:p-10 flex flex-col justify-center border-2 border-emerald-700/30">
+        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 md:p-8 flex flex-col justify-center border-2 border-emerald-700/30">
           <h1 className="text-3xl md:text-4xl font-bold text-emerald-400 text-center mb-4">
             Patient Registration
           </h1>
           <p className="text-emerald-200 text-center mb-8">
             Precision Healthcare, Personal Care
           </p>
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Username Field */}
@@ -59,12 +74,14 @@ export function ProfileForm() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-emerald-300">Full Name</FormLabel>
+                    <FormLabel className="text-emerald-300">
+                      Full Name
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Enter your full name"
                         {...field}
-                        className="border-emerald-700 focus:ring-emerald-500 focus:border-emerald-500 
+                        className="border-emerald-700 placeholder:text-gray-400 focus:ring-emerald-500 focus:border-emerald-500 
                         text-white bg-gray-900/50 hover:bg-emerald-900/30 transition-colors"
                       />
                     </FormControl>
@@ -75,7 +92,7 @@ export function ProfileForm() {
                   </FormItem>
                 )}
               />
-              
+
               {/* Email Field */}
               <FormField
                 control={form.control}
@@ -85,21 +102,23 @@ export function ProfileForm() {
                     <FormLabel className="text-emerald-300">Email Address</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="example@domain.com"
+                        placeholder="example@gmail.com"
                         type="email"
                         {...field}
                         className="border-emerald-700 focus:ring-emerald-500 focus:border-emerald-500 
-                        text-white bg-gray-900/50 hover:bg-emerald-900/30 transition-colors"
+                        text-white bg-gray-900/50 hover:bg-emerald-900/30  placeholder:text-gray-400 transition-colors"
                       />
                     </FormControl>
                     <FormDescription className="text-emerald-200">
                       For medical communication and updates
                     </FormDescription>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage className="text-red-400">
+                      {form.formState.errors.email?.message || ""}
+                    </FormMessage> {/* Display error message */}
                   </FormItem>
                 )}
               />
-              
+
               {/* Phone Number Field */}
               <FormField
                 control={form.control}
@@ -108,22 +127,36 @@ export function ProfileForm() {
                   <FormItem>
                     <FormLabel className="text-emerald-300">Phone Number</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="1234567890"
-                        type="tel"
-                        {...field}
-                        className="border-emerald-700 focus:ring-emerald-500 focus:border-emerald-500 
-                        text-white bg-gray-900/50 hover:bg-emerald-900/30 transition-colors"
+                      <PhoneInput
+                        placeholder="Enter phone number"
+                        defaultCountry="KE" // Default to Kenya
+                        value={phone} // Use local state for continuous typing
+                        onChange={(value) => {
+                          setPhone(value || ""); // Update local state
+                          field.onChange(value); // Update form state
+                        }}
+                        international
+                        withCountryCallingCode
+                        className="w-full"
+                        inputComponent={({ className, ...props }) => (
+                          <input
+                            {...props}
+                            className={`px-3 py-2 rounded-md border border-emerald-700 
+                            bg-gray-900/50 text-white placeholder:text-gray-400 
+                            focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 
+                            hover:bg-emerald-900/30 transition-colors w-full ${className}`}
+                          />
+                        )}
                       />
                     </FormControl>
                     <FormDescription className="text-emerald-200">
-                      For emergency contact and scheduling
+                      For emergency contact and scheduling.
                     </FormDescription>
                     <FormMessage className="text-red-400" />
                   </FormItem>
                 )}
               />
-              
+
               <div className="text-center">
                 <Button
                   type="submit"
@@ -133,20 +166,25 @@ export function ProfileForm() {
                 >
                   Register Patient
                 </Button>
+                <p className="mt-5 text-sm">© Health-care copyright</p>
               </div>
             </form>
           </Form>
         </div>
 
         {/* About Us Section */}
-        <div className="bg-gradient-to-br from-gray-800 to-emerald-900 text-white rounded-2xl 
+        <div
+          className="bg-gradient-to-br from-gray-800 to-emerald-900 text-white rounded-2xl 
         p-8 md:p-10 flex flex-col justify-center items-center space-y-6 
-        lg:flex-row lg:space-y-0 lg:space-x-8">
+        lg:flex-row lg:space-y-0 lg:space-x-8"
+        >
           <div className="text-center lg:text-left lg:w-1/2">
-            <h2 className="text-2xl md:text-3xl font-bold text-emerald-300 mb-4">Our Commitment</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-emerald-300 mb-4">
+              Our Commitment
+            </h2>
             <p className="text-emerald-100">
-              Delivering advanced medical solutions with unparalleled precision 
-              and compassionate care. Our expert team combines cutting-edge 
+              Delivering advanced medical solutions with unparalleled precision
+              and compassionate care. Our expert team combines cutting-edge
               technology with personalized patient support.
             </p>
           </div>
